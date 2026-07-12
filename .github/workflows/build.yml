@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
+  release:
+    types: [published]
+
+permissions:
+  contents: write
 
 jobs:
   build-android:
@@ -73,3 +78,27 @@ jobs:
         with:
           name: synced-stopwatch-exe
           path: dist/SyncedStopwatch.exe
+
+  publish-release:
+    needs: [build-android, build-windows]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: synced-stopwatch-apk
+          path: apk
+
+      - name: Download EXE artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: synced-stopwatch-exe
+          path: exe
+
+      - name: Attach files to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            apk/*.apk
+            exe/*.exe
